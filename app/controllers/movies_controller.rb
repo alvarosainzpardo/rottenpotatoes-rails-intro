@@ -14,12 +14,20 @@ class MoviesController < ApplicationController
     case params[:sort]
     when "movie_title"
       @sort_column = :title
-      @movies = Movie.order(@sort_column)
     when "release_date"
       @sort_column = :release_date
-      @movies = Movie.order(@sort_column)
+    end
+    @all_ratings = []
+    Movie.uniq.pluck(:rating).each do |rating|
+      @all_ratings << {rating:rating, checked:true}
+    end
+    if params[:ratings]
+      @all_ratings.each {|h| h[:checked] = false}
+      ratings_checked = params[:ratings].keys
+      @all_ratings.each {|h| h[:checked] = true if ratings_checked.include?(h[:rating])}
+      @movies = Movie.where(rating:ratings_checked)
     else
-      @movies = Movie.all
+      @movies = Movie.order(@sort_column)
     end
   end
 
