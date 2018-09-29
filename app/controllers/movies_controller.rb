@@ -14,21 +14,31 @@ class MoviesController < ApplicationController
     case params[:sort]
     when "movie_title"
       @sort_column = :title
+      session[:sort] = :title
     when "release_date"
       @sort_column = :release_date
+      session[:sort] = :release_date
+    else
+      @sort_column = session[:sort]
     end
     @all_ratings = []
     Movie.uniq.pluck(:rating).each do |rating|
       @all_ratings << {rating:rating, checked:true}
     end
     if params[:ratings]
-      @all_ratings.each {|h| h[:checked] = false}
+      session.delete(:sort)
+      session[:ratings] = params[:ratings]
       ratings_checked = params[:ratings].keys
+      @all_ratings.each {|h| h[:checked] = false}
       @all_ratings.each {|h| h[:checked] = true if ratings_checked.include?(h[:rating])}
-      @movies = Movie.where(rating:ratings_checked)
+    elsif session[:ratings]
+      ratings_checked = session[:ratings].keys
+      @all_ratings.each {|h| h[:checked] = false}
+      @all_ratings.each {|h| h[:checked] = true if ratings_checked.include?(h[:rating])}
     else
-      @movies = Movie.order(@sort_column)
+      ratings_checked = Movie.uniq.pluck(:rating)
     end
+    @movies = Movie.where(rating:ratings_checked).order(@sort_column)
   end
 
   def new
